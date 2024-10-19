@@ -44,7 +44,12 @@ export class BandWidthService {
         this.throttleService.trackBandWidth(userId,speedLogs)
 
       },1000)
-  
+
+      userThrottle.on('end', () => {
+        console.log("called")
+        clearInterval(interval)
+        //console.log(`Stream finished. Total data sent: ${totalMB.toFixed(2)} MB`);})
+      })
       // Step 3: Pipe the file stream through the throttle and to the response
       fileStream.pipe(userThrottle).pipe(res);
       return ()=>{

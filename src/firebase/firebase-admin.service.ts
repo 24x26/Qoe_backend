@@ -46,8 +46,10 @@ export class FirebaseAdminService{
         const userRef = await this.getUserRef(userId)
         const  snapshot = await userRef.once("value")
         const data = snapshot.val()
+        console.log(data)
         await userRef.update({
-            bandwidthHistory:[...data.bandwidthHistory,{
+            bandWidth:bandWidth,
+            bandwidthHistory:data.bandwidthHistory.length && [...data.bandwidthHistory,{
                 bandwidth:bandWidth,
                 timestamp:Date.now()
             }]
