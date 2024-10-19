@@ -7,19 +7,17 @@ export const plansToCIR={
 }
 
 export function bytesToSpeed(bytes:number) {
-    // Step 1: Calculate bits from bytes
-    const bits = bytes * 8;
 
     // Step 2: Determine if it should be in Kbps or Mbps
-    if (bits < 1000) {
-        return `${bits} bits`;
-    } else if (bits < 1000000) {
+    if (bytes < 1024) {
+        return `${bytes} bytes`;
+    } else if (bytes < 1000000) {
         // Convert to Kbps
-        const kbps = bits / 1000;
+        const kbps = bytes / 1024;
         return `${kbps.toFixed(2)} Kbps`;
     } else {
         // Convert to Mbps
-        const mbps = bits / 1000000;
+        const mbps = bytes / (1024 * 1024);
         return `${mbps.toFixed(2)} Mbps`;
     }
 }
