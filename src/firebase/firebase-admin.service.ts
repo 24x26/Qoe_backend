@@ -1,6 +1,7 @@
 import  { Injectable, Logger, NotFoundException} from "@nestjs/common"
 import * as admin from "firebase-admin"
 import * as serviceAccount from "../constants/qsodevest-firebase.json"
+import { bytesToSpeed } from "src/constants"
 
 
 
@@ -43,8 +44,13 @@ export class FirebaseAdminService{
     // function to update brand-width of user
     async updateUser(userId:string,bandWidth : number){
         const userRef = await this.getUserRef(userId)
+        const  snapshot = await userRef.once("value")
+        const data = snapshot.val()
         await userRef.update({
-            bandWidth:bandWidth
+            bandwidthHistory:[...data.bandwidthHistory,{
+                bandwidth:bandWidth,
+                timestamp:Date.now()
+            }]
         })
 
         this.logger.log(`Brand width of user ${userId} updated to ${bandWidth}`)
@@ -64,6 +70,29 @@ export class FirebaseAdminService{
         const userData = snapshot.val()
         this.logger.log(`User ${userId} retrieved from firebase`)
         return userData
+    }
+
+    async getAdmin(admin: string){
+        const adminRef = await this.getAdminRef(admin)
+        const snapshot = await adminRef.once('value')
+        if(snapshot.exists()){
+            return snapshot.val()
+        }
+       return false
+    }
+
+    // get users
+    async getUsers(){
+        try {
+            const usersRef = this.db.ref("users")
+            const snapshot = await usersRef.once("value")
+            const users = snapshot.val()
+            return users ? Object.keys(users).map(key => ({
+                userId : key, cir : bytesToSpeed(users[key].cir), bandWidth : bytesToSpeed(users[key].bandWidth), mir:bytesToSpeed(users[key].mir) ,username : users[key].username,plan:users[key].plan,isConnected:users[key].isConnected
+            })) : []
+        } catch (error) {
+            throw error
+        }
     }
 
     async getUserByUsername(name: string){
@@ -90,5 +119,57 @@ export class FirebaseAdminService{
         }catch(e){
             throw e
         }
+    }
+
+    async addAdmin(admin:string,pw:string){
+        const adminRef = await this.getAdminRef(admin)
+        await adminRef.set({
+            password : pw
+        })
+    }
+
+    async getAdminRef(adminUserName:string){
+        try{
+            return this.db.ref("admins").child(adminUserName)
+        }catch(e){
+            throw e
+        }
+    }
+
+    // manager can set its maximum band (by one of his admins)
+    async setMaxBand(value:number){
+        try{
+            const adminRef = await this.getAdminRef('admin')
+            adminRef.update({
+                bandMaxWidth : value
+            })
+            return true
+        }catch(e){
+            throw e
+        }
+    }
+
+    // get MAx bandwidth
+    async getMaxBandWidth(){
+        const admin = await this.getAdminRef("admin")
+        const snapshot = await admin.once('value')
+        if(snapshot.exists()){
+            return snapshot.val()
+        }
+    }
+
+    async getBandHistory(userId:string){
+        try{
+            const userData = await this.getUserById(userId)
+            return userData
+        }catch(e){
+            throw e
+        }
+    }
+    async deleteSpeedLogs(userId:string){
+        const userRef= await this.getUserRef(userId)
+        await userRef.update({
+            speedLogs : []
+        })
     }
 }

@@ -15,9 +15,8 @@ export class BandWidthService {
                 throw new UnauthorizedException("not authorized to download file")
             }
             // get user throttle
-            const userThrottle = this.throttleService.getUserThrottle(userId)
-            console.log(userThrottle)
-            const filePath = join(__dirname,"test.pdf")
+            const userThrottle =await  this.throttleService.getUserThrottle(userId)
+            const filePath = join(__dirname, '..', '..', 'src', 'band-width','assets', 'Devest_Guide.pdf');
             const fileStream = fs.createReadStream(filePath)
             // Step 4: Set headers for response
             // Step 2: Set appropriate headers for the response
@@ -31,13 +30,12 @@ export class BandWidthService {
       // step 3 : listen to throttle chunks and save the network speed in each moment
       userThrottle.on('data', (chunk:any) => {
         totalBytesSent += chunk.length;
-        console.log(totalBytesSent)
         //const speed = (totalBytesSent / elapsedTime) / 1024; // in KB/s
       });
 
       const interval = setInterval(()=>{
         const elapsedTime = (Date.now() - startTime) / 1000;
-        const speed = (totalBytesSent / elapsedTime) / 1024
+        const speed = (totalBytesSent / elapsedTime)
         speedLogs.push({
             timestamp: elapsedTime,
             value : speed
@@ -49,7 +47,10 @@ export class BandWidthService {
   
       // Step 3: Pipe the file stream through the throttle and to the response
       fileStream.pipe(userThrottle).pipe(res);
-      return ()=>clearInterval(interval)
+      return ()=>{
+        clearInterval(interval)
+        this.db.deleteSpeedLogs(userId)
+    }
         } catch (error) {
             throw error
         }

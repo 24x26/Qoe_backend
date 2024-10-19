@@ -21,4 +21,11 @@ export class AuthController {
         return await this.authService.logoutUser(data.userId)
     }
 
+    @Post("/loginAdmin")
+    async loginAdmin(@Body() data){
+        return await this.authService.loginAdmin(data.username,data.password)
+    }
+
+    
+
 }

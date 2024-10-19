@@ -14,8 +14,14 @@ export class AuthService {
         try{
 const userData = {
     username:user.username,
-    currentLimit : await  this.mapToCIR(user.plan),
-    cir : await this.mapToCIR(user.plan)
+    plan:user.plan,
+    bandWidth : await  this.mapToCIR(user.plan),
+    bandwidthHistory:[{
+        timestamp:Date.now(),
+        bandwidth : await this.mapToCIR(user.plan)
+    }],
+    cir : await this.mapToCIR(user.plan),
+    mir:await this.mapToCIR(user.plan)
 }
 const isUserExist = await this.db.getUserByUsername(user.username)
 if(isUserExist){
@@ -37,7 +43,8 @@ return {
         try{
             const user = await this.db.getUserByUsername(userName)
             if(typeof user== "object"){
-                return user
+                const userId=Object.keys(user)[0] 
+                return {userId,username:user[userId].username}
             }
             throw new UnauthorizedException("no account match this client")
         }catch(e){
@@ -54,6 +61,21 @@ return {
             await this.db.changeStatus(userId,false)
             return {
                 message : "client logout successfully"
+            }
+        }catch(e){
+            throw e
+        }
+    }
+
+    async loginAdmin(username:string,password:string){
+        try{
+            const isAdminFound = this.db.getAdmin(username)
+            if(!isAdminFound){
+                throw new UnauthorizedException("admin not found")
+            }
+            return {
+                success : true,
+                message : "login success"
             }
         }catch(e){
             throw e
